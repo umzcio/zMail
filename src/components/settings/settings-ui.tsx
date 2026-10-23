@@ -24,3 +24,39 @@ export function Row({ label, hint, disabled, children }: { label: ReactNode; hin
     </div>
   );
 }
+
+/** A segmented control, for two to four choices in a settings row. */
+export function Segmented<T extends string>({
+  value,
+  options,
+  onChange,
+  disabled,
+  label,
+}: {
+  value: T;
+  options: readonly (readonly [T, string])[];
+  onChange: (v: T) => void;
+  disabled?: boolean;
+  label: string;
+}) {
+  return (
+    <div role="radiogroup" aria-label={label} className="flex gap-0.5 rounded-lg bg-foreground/[0.06] p-0.5">
+      {options.map(([v, text]) => (
+        <button
+          key={v}
+          role="radio"
+          aria-checked={value === v}
+          disabled={disabled}
+          onClick={() => onChange(v)}
+          className={cn(
+            "rounded-md px-2.5 py-1 text-[12px] whitespace-nowrap transition",
+            value === v ? "bg-[var(--pane)] font-medium shadow-sm" : "text-foreground/60 enabled:hover:text-foreground",
+          )}
+        >
+          {text}
+        </button>
+      ))}
+    </div>
+  );
+}
+

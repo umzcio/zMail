@@ -6,44 +6,8 @@ import { useSettings, type NotificationPrefs } from "@/lib/settings";
 import { useMail } from "@/lib/store";
 import { refreshNotifyStatus, sendTest } from "@/lib/notifications";
 import { notifyOpenSettings, notifyRequest, type NotifyStatus } from "@/lib/notify-native";
-import { cn } from "@/lib/utils";
 import { accountColorOf, accountLabel } from "../account-switcher";
-import { Group, Row } from "./settings-ui";
-
-/** A segmented control, styled like Appearance → Message background. */
-function Segmented<T extends string>({
-  value,
-  options,
-  onChange,
-  disabled,
-  label,
-}: {
-  value: T;
-  options: readonly (readonly [T, string])[];
-  onChange: (v: T) => void;
-  disabled?: boolean;
-  label: string;
-}) {
-  return (
-    <div role="radiogroup" aria-label={label} className="flex gap-0.5 rounded-lg bg-foreground/[0.06] p-0.5">
-      {options.map(([v, text]) => (
-        <button
-          key={v}
-          role="radio"
-          aria-checked={value === v}
-          disabled={disabled}
-          onClick={() => onChange(v)}
-          className={cn(
-            "rounded-md px-2.5 py-1 text-[12px] whitespace-nowrap transition",
-            value === v ? "bg-[var(--pane)] font-medium shadow-sm" : "text-foreground/60 enabled:hover:text-foreground",
-          )}
-        >
-          {text}
-        </button>
-      ))}
-    </div>
-  );
-}
+import { Group, Row, Segmented } from "./settings-ui";
 
 const time = "selectable h-7 rounded-md border border-hairline bg-[var(--pane)] px-2 text-[12.5px] tabular-nums outline-none focus:ring-2 focus:ring-ring/30";
 

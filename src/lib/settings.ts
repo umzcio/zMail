@@ -82,6 +82,10 @@ export interface Settings {
   assistantWidth: number;
   /** The sidebar folded to a rail of icons (⌃⌘S). */
   sidebarCollapsed: boolean;
+  /** When an opened email counts as read: at once, after markReadDelay seconds open, on moving to another, or only by hand. */
+  markRead: MarkRead;
+  /** Seconds an email stays open before it counts as read, with markRead "delay". */
+  markReadDelay: number;
   /** Today: read mail below a divider ("all") or hidden ("unread"). */
   todayShow: "all" | "unread";
   /** Today's Needs you order: the model's urgency, or by date. */
@@ -95,6 +99,8 @@ export interface Settings {
   /** Banners for new mail zMail sorts into Needs you, and the dock badge. */
   notifications: NotificationPrefs;
 }
+
+export type MarkRead = "open" | "delay" | "leave" | "never";
 
 interface SettingsStore extends Settings {
   set: (patch: Partial<Settings>) => void;
@@ -141,6 +147,8 @@ export const useSettings = create<SettingsStore>()(
       suggestThreshold: 0.7,
       assistantWidth: 340,
       sidebarCollapsed: false,
+      markRead: "open",
+      markReadDelay: 5,
       todayShow: "all",
       needsSort: "urgency",
       travelPlaces: { home: "", work: "" },

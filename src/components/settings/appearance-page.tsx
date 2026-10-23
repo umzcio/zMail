@@ -10,7 +10,8 @@ import { useSettings, type PaletteId, type ThemeMode, type Tinted } from "@/lib/
 import { PALETTES } from "@/lib/theme";
 import { cn } from "@/lib/utils";
 import { BUCKET_META, CATEGORY_META } from "@/lib/meta";
-import { Group, Row } from "./settings-ui";
+import { Group, Row, Segmented } from "./settings-ui";
+import { MARK_READ_DELAY } from "@/lib/store/read-on-open";
 
 function ThemePreview({ mode }: { mode: ThemeMode }) {
   const dark = mode === "dark";
@@ -169,6 +170,47 @@ export function AppearancePage() {
         <Row label="Show sender logos" hint="For well-known companies, and senders whose images you always load. Looked up once from the company's own domain and kept on this Mac. Never for personal addresses, your own organization, or mail in Junk.">
           <Switch checked={s.senderLogos} onCheckedChange={(on) => s.set({ senderLogos: on })} aria-label="Show sender logos" />
         </Row>
+      </Group>
+
+      <Group
+        title="Reading"
+        footer={
+          s.markRead === "never"
+            ? "Emails stay unread until you press U or use Mark as read."
+            : s.markRead === "leave"
+              ? "An email counts as read once you open another one or close it."
+              : "Opening an email by accident? Pick a delay, or wait until you move on."
+        }
+      >
+        <Row label="Mark as read">
+          <Segmented
+            label="Mark as read"
+            value={s.markRead}
+            onChange={(markRead) => s.set({ markRead })}
+            options={[
+              ["open", "When opened"],
+              ["delay", "After a delay"],
+              ["leave", "When I move on"],
+              ["never", "Never"],
+            ]}
+          />
+        </Row>
+        {s.markRead === "delay" && (
+          <Row label="Seconds open before it counts">
+            <input
+              type="number"
+              min={MARK_READ_DELAY.min}
+              max={MARK_READ_DELAY.max}
+              value={s.markReadDelay}
+              onChange={(e) => {
+                const n = Math.round(Number(e.target.value));
+                if (Number.isFinite(n) && n >= MARK_READ_DELAY.min && n <= MARK_READ_DELAY.max) s.set({ markReadDelay: n });
+              }}
+              aria-label="Seconds open before it counts as read"
+              className="selectable h-7 w-16 rounded-md bg-foreground/[0.06] px-2 text-right text-[12.5px] tabular-nums outline-none focus:ring-2 focus:ring-ring/40"
+            />
+          </Row>
+        )}
       </Group>
 
       <Group title="Color scheme" footer="Sets the accent and the colors used for buckets and categories.">

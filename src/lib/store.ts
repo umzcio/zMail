@@ -34,6 +34,7 @@ import type { ActionResult, BackfillState, Compose, ComposeOpened, MailState } f
 import { capLessons, learn, lessonsFromOverrides, senderExamples, type Lesson } from "./store/learning";
 import { calProviders, providerFor, providers } from "./store/providers";
 import { countsFor, pendingCounts, scheduleCountRefresh } from "./store/counts";
+import { leftEmail, openedUnread, settledByHand } from "./store/read-on-open";
 import { batched, flagging, groupBy, hold, inLane, runBulk, type BulkJob } from "./store/batching";
 import { calendarAccountsChanged, syncCalendars } from "./store/calendar-sync";
 import { calendarActions } from "./store/calendar-actions";
@@ -1097,7 +1098,7 @@ export const useMail = create<MailState>()((set, get) => {
       // Opened on Today: keep it in place (it's about to be marked read) so K can come back to it.
       const keep = !!e && s.view.kind === "brief" && isInbox(s, e) && !s.todayKept.has(e.id);
       set({ selectedId: id, compose: null, composeDirty: false, composeCloseAsk: null, ...(keep ? { todayKept: new Set(s.todayKept).add(e.id) } : {}) });
-      if (e?.unread) void get().setRead([e.id], true);
+      if (e?.unread) openedUnread(e.id, markOpened, isOpen);
     },
     setComposeDirty: (composeDirty) => set({ composeDirty }),
     setComposeView: (composeView) => set({ composeView }),
@@ -1482,8 +1483,8 @@ export const useMail = create<MailState>()((set, get) => {
         const emails = opened ? adoptInto(s.emails, s.search, [opened]) : s.emails;
         return { snoozed, selectedId, emails, checked: new Set([...s.checked].filter((id) => !ids.includes(id))) };
       });
-      // Opening the next email marks it read, as a click would.
-      if (opened && get().emails.find((e) => e.id === opened)?.unread) void get().setRead([opened], true);
+      // Opening the next email counts as opening it, as a click would.
+      if (opened && get().emails.find((e) => e.id === opened)?.unread) openedUnread(opened, markOpened, isOpen);
     },
 
     unsnooze(ids) {
@@ -1500,6 +1501,7 @@ export const useMail = create<MailState>()((set, get) => {
     },
 
     setRead(ids, read) {
+      settledByHand(ids);
       const want = new Set(ids);
       return setFlag(get().emails.filter((e) => want.has(e.id) && e.unread === read), "unread", !read);
     },
@@ -1779,9 +1781,21 @@ function applyPatches(patch: Map<string, Partial<Email>>) {
   });
   scheduleCountRefresh(touched);
   recache([...patch.keys()]);
-  // Opening the next email marks it read, as a click would.
-  if (opened && useMail.getState().emails.find((e) => e.id === opened)?.unread) void useMail.getState().setRead([opened], true);
+  // Opening the next email counts as opening it, as a click would.
+  if (opened && useMail.getState().emails.find((e) => e.id === opened)?.unread) openedUnread(opened, markOpened, isOpen);
 }
+
+/** Opening an email marks it read when Settings → Appearance → Reading says so (store/read-on-open). */
+function markOpened(id: string) {
+  void useMail.getState().setRead([id], true);
+}
+function isOpen(id: string) {
+  return useMail.getState().selectedId === id;
+}
+// Leaving an email is when it counts as read with "When I move on".
+useMail.subscribe((s, prev) => {
+  if (prev.selectedId && s.selectedId !== prev.selectedId) leftEmail(prev.selectedId, markOpened);
+});
 
 // A Today visit's "opened" set ends when the Unread / All switch flips (it reorders the list). Subscribing here
 // covers every place that sets todayShow, not just the switch's onClick.
