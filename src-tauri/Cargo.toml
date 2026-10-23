@@ -1,6 +1,6 @@
 [package]
 name = "zmail"
-version = "0.1.6"
+version = "0.1.7"
 description = "zMail — an AI-first email client"
 authors = ["Zach Rossmiller"]
 license = "MIT"
